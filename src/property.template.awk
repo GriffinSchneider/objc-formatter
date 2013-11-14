@@ -56,20 +56,20 @@ function parseLine(line) {
 		maxLengths["type"]                = 0
 		maxLengths["name"]                = 0
 
-		readProperties(line, propertyDeclarations, decoratorLists, types, names, maxLengths)
+		readProperties(line, propertyDeclarations, decoratorLists, types, names, comments, maxLengths)
 		# @end-fragment parse
 	}
 }
 
 # @start-fragment functions
-function readProperties(line, propertyDeclarations, decoratorLists, types, names, maxLengths) {
-	extractProperties(line, propertyDeclarations, decoratorLists, types, names, maxLengths)
+function readProperties(line, propertyDeclarations, decoratorLists, types, names, comments, maxLengths) {
+	extractProperties(line, propertyDeclarations, decoratorLists, types, names, comments, maxLengths)
 	getline line
 
 	if (line ~ /@property/ || line ~ /^[ \t]*$/) {
-		readProperties(line, propertyDeclarations, decoratorLists, types, names, maxLengths)
+		readProperties(line, propertyDeclarations, decoratorLists, types, names, comments, maxLengths)
 	} else {
-		formatProperties(propertyDeclarations, decoratorLists, types, names, maxLengths)
+		formatProperties(propertyDeclarations, decoratorLists, types, names, comments, maxLengths)
 		
 		# clean up
 		
@@ -77,6 +77,7 @@ function readProperties(line, propertyDeclarations, decoratorLists, types, names
 		delete decoratorLists
 		delete types
 		delete names
+        delete comments
 		delete maxLengths
 		
 		# continue parsing the line that was just read
@@ -85,7 +86,7 @@ function readProperties(line, propertyDeclarations, decoratorLists, types, names
 	}
 }
 
-function extractProperties(line, propertyDeclarations, decoratorLists, types, names, maxLengths) {
+function extractProperties(line, propertyDeclarations, decoratorLists, types, names, comments, maxLengths) {
 	if (line !~ /^[ \t]*$/) {
 		gsub(";", "", line)
 		line = condenseWhitespace(line)
@@ -110,11 +111,18 @@ function extractProperties(line, propertyDeclarations, decoratorLists, types, na
 		# associate the star with the variable name's token
 		gsub(/[ \t]*\*[ \t]*/, " *", variableDeclaration)
 
-		split(variableDeclaration, variableComponents)
+        split(variableDeclaration, variableDeclarationAndComment, "//")
+
+        if (length(variableDeclarationAndComment[2]) != 0) {
+            comments[i] = " //" variableDeclarationAndComment[2]
+        }
+
+        split(variableDeclarationAndComment[1], variableComponents)
 
 		variableComponentCount = length(variableComponents)
 
 		name = trim(variableComponents[variableComponentCount])
+
 		maxLengths["name"] = max(maxLengths["name"], length(name))
 		names[i] = name
 
@@ -134,68 +142,8 @@ function extractProperties(line, propertyDeclarations, decoratorLists, types, na
 	}
 }
 
-function formatProperties(propertyDeclarations, decoratorLists, types, names, maxLengths) {
+function formatProperties(propertyDeclarations, decoratorLists, types, names, comments, maxLengths) {
 	propertyCount = length(propertyDeclarations)
-
-	if (config["PROPERTIES_SHOULD_HAVE_IBOUTLETS_GROUPED"] == 1) {
-		a = 1
-		b = 1
-
-		for (i = 1; i <= propertyCount; i++) {
-			if (decoratorLists[i] ~ /IBOutlet/) {
-				propertyDeclarationsA[a] = propertyDeclarations[i]
-				decoratorListsA[a]       = decoratorLists[i]
-				typesA[a]                = types[i]
-				namesA[a]                = names[i]
-
-				a++
-			} else {
-				propertyDeclarationsB[b] = propertyDeclarations[i]
-				decoratorListsB[b]       = decoratorLists[i]
-				typesB[b]                = types[i]
-				namesB[b]                = names[i]
-
-				b++
-			}
-		}
-
-		delete propertyDeclarations
-		delete decoratorLists
-		delete types
-		delete names
-
-		j = 1
-
-		propertiesInA = length(propertyDeclarationsA)
-		for (a = 1; a <= propertiesInA; a++) {
-			propertyDeclarations[j] = propertyDeclarationsA[a]
-			decoratorLists[j]       = decoratorListsA[a]
-			types[j]                = typesA[a]
-			names[j]                = namesA[a]
-
-			j++
-		}
-
-		propertiesInB = length(propertyDeclarationsB)
-		for (b = 1; b <= propertiesInB; b++) {
-			propertyDeclarations[j] = propertyDeclarationsB[b]
-			decoratorLists[j]       = decoratorListsB[b]
-			types[j]                = typesB[b]
-			names[j]                = namesB[b]
-
-			j++
-		}
-
-		delete propertyDeclarationsA
-		delete decoratorListsA
-		delete typesA
-		delete namesA
-
-		delete propertyDeclarationsB
-		delete decoratorListsB
-		delete typesB
-		delete namesB
-	}
 
 	if (config["PROPERTIES_SHOULD_HAVE_SPACE_AFTER_ANNOTATION"] == 1) {
 		for (i = 1; i <= propertyCount; i++) {
@@ -215,42 +163,13 @@ function formatProperties(propertyDeclarations, decoratorLists, types, names, ma
 	for (i = 1; i <= propertyCount; i++) {
 		if (config["PROPERTIES_SHOULD_HAVE_N_COLUMNS"] == 1) {
 			if (length(decoratorLists[i]) > 0) {
-				printf("%s %s %s %s;\n", propertyDeclarations[i], decoratorLists[i], types[i], names[i])
+				printf("%s %s %s %s;%s\n", propertyDeclarations[i], decoratorLists[i], types[i], names[i], comments[i])
 			} else {
 
-				printf("%s %s %s;\n", propertyDeclarations[i], types[i], names[i])
-			}
-		} else if (config["PROPERTIES_SHOULD_HAVE_N_COLUMNS"] == 2) {
-			col1 = propertyDeclarations[i]
-			col2 = trim(decoratorLists[i] " " types[i] " " names[i])
-
-			format = "%-" maxLengths["propertyDeclaration"] "s %s;\n"
-
-			printf(format, col1, col2)
-		} else if (config["PROPERTIES_SHOULD_HAVE_N_COLUMNS"] == 3) {
-			col1 = propertyDeclarations[i]
-			col2 = trim(decoratorLists[i] " " types[i] " ")
-			col3 = names[i]
-
-			format = "%-" maxLengths["propertyDeclaration"] "s %-" col2Len "s %s;\n"
-			printf(format, col1, col2, col3)
-		} else {
-			col1 = propertyDeclarations[i]
-			col2 = decoratorLists[i]
-			col3 = types[i]
-			col4 = names[i]
-
-			if (maxLengths["decoratorList"] == 0) {
-				format = "%-" maxLengths["propertyDeclaration"] "s %-" maxLengths["type"] "s %s;\n"
-				printf(format, col1, col3, col4)
-			} else {
-				format = "%-" maxLengths["propertyDeclaration"] "s %-" maxLengths["decoratorList"] "s " \
-					"%-" maxLengths["type"] "s %s;\n"
-				printf(format, col1, col2, col3, col4)
+				printf("%s %s %s;%s\n", propertyDeclarations[i], types[i], names[i], comments[i])
 			}
 		}
-	}
-
+    }
 	print ""
 }
 # @end-fragment functions
