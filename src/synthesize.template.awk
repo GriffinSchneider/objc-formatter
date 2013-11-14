@@ -13,7 +13,7 @@ BEGIN {
 	#      @synthesize tableView                = _tableView;
 	#      @synthesize fetchedResultsController = _fetchedResultsController;
 	#
-	config["SYNTHESIZERS_SHOULD_HAVE_N_COLUMNS"] = 2
+	config["SYNTHESIZERS_SHOULD_HAVE_N_COLUMNS"] = 1
 	# @end-fragment default-config
 
 	# @include-fragment util.awk config

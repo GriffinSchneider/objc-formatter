@@ -8,7 +8,7 @@ BEGIN {
 	#
 	#   1: Groups all IBOutlets at the top of all property declarations
 	# 
-	config["PROPERTIES_SHOULD_HAVE_IBOUTLETS_GROUPED"] = 1
+	config["PROPERTIES_SHOULD_HAVE_IBOUTLETS_GROUPED"] = 0
 
 	# Possible Values: 0, 1
 	#
@@ -38,7 +38,7 @@ BEGIN {
 	#      @property(nonatomic, retain)            IBOutlet UIWindow    *window;
 	#      @property(nonatomic, retain, readwrite)          UITableView *tableView;
 	#
-	config["PROPERTIES_SHOULD_HAVE_N_COLUMNS"] = 4
+	config["PROPERTIES_SHOULD_HAVE_N_COLUMNS"] = 1
 	# @end-fragment default-config
 
 	# @include-fragment util.awk config
