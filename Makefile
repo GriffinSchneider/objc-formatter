@@ -24,10 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF 
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-all: test
-
-test: generate
-	./test/run.sh build test/testcases
+all: generate
 
 generate: objc-formatter.awk
 	chmod +x build/*.awk

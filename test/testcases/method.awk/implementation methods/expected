@@ -1,4 +1,0 @@
-- (void)calculateCashDown;
-- (void)calculateLoanAmount;
-- (void)calculatePercentDown;
-- (void)calculatePurchasePrice;
